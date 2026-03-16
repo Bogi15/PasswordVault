@@ -1,0 +1,76 @@
+# ============================================================
+#  IntelliJ IDEA
+# ============================================================
+.idea/
+*.iml
+*.iws
+*.ipr
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/usage.statistics.xml
+.idea/dictionaries
+.idea/shelf
+
+# ============================================================
+#  Java compiled output
+# ============================================================
+out/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+
+# ============================================================
+#  Build tools (Maven / Gradle — future-proofing)
+# ============================================================
+target/
+build/
+*.gradle
+.gradle/
+gradle-app.setting
+!gradle-wrapper.jar
+
+# ============================================================
+#  rePasswordVault — project specific
+# ============================================================
+
+# Storage folder:
+storage/
+*.dat
+
+# Log file: runtime logs, no place in version control
+log.txt
+*.log
+logs/
+
+# Any exported/backup vault files
+*.vault
+*.bak
+*.backup
+
+# ============================================================
+#  OS junk
+# ============================================================
+
+# Windows
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+
+# ============================================================
+#  Sensitive / environment files
+# ============================================================
+*.env
+.env
+config.properties
+secrets.properties
+credentials.properties
