@@ -1,0 +1,11 @@
+package bg.sofia.uni.fmi.mjt.vault.exceptions;
+
+public class DecryptionFailedException extends RuntimeException {
+    public DecryptionFailedException(String message) {
+        super(message);
+    }
+
+    public DecryptionFailedException(String message, Throwable cause) {
+        super(message, cause);
+    }
+}
