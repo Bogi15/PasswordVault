@@ -88,12 +88,17 @@ public class PasswordVaultServer {
     }
 
     private void dispatchKey(SelectionKey key) throws IOException {
-        if (key.isAcceptable()) {
-            accept(selector, key);
-        } else if (key.isReadable()) {
-            handleRead(key);
-        } else if (key.isWritable()) {
-            handleWrite(key);
+        try {
+            if (key.isAcceptable()) {
+                accept(selector, key);
+            } else if (key.isReadable()) {
+                handleRead(key);
+            } else if (key.isWritable()) {
+                handleWrite(key);
+            }
+        } catch (IOException e) {
+            Logger.logError("Error dispatching key, closing client", e);
+            closeClient((SocketChannel) key.channel(), key);
         }
     }
 
@@ -131,26 +136,41 @@ public class PasswordVaultServer {
         ClientContext clientContext = (ClientContext) key.attachment();
         ByteBuffer buffer = clientContext.getReadBuffer();
 
-        buffer.clear();
-        int readBytes = clientChannel.read(buffer);
+        try {
+            int readBytes = fillBuffer(clientChannel, buffer);
 
-        if (readBytes < 0) {
-            clientChannel.close();
+            if (readBytes < 0) {
+                closeClient(clientChannel, key);
+                return;
+            }
+
+            if (readBytes == 0) {
+                return;
+            }
+
+            String clientInput = extractString(buffer);
+            submitClientInput(clientContext, clientInput, key);
+        } catch (IOException e) {
             key.cancel();
-            return;
+            try {
+                clientChannel.close();
+            } catch (IOException ex) {
+                Logger.logError("Error closing client channel", ex);
+            }
         }
+    }
 
-        if (readBytes == 0) {
-            return;
-        }
+    private int fillBuffer(SocketChannel channel, ByteBuffer buffer) throws IOException {
+        buffer.clear();
+        return channel.read(buffer);
+    }
 
+    private String extractString(ByteBuffer buffer) {
         buffer.flip();
-
         byte[] clientInputBytes = new byte[buffer.remaining()];
         buffer.get(clientInputBytes);
 
-        String clientInput = new String(clientInputBytes, StandardCharsets.UTF_8);
-        submitClientInput(clientContext, clientInput, key);
+        return new String(clientInputBytes, StandardCharsets.UTF_8);
     }
 
     private void submitClientInput(ClientContext clientContext, String clientInput, SelectionKey key) {
@@ -171,16 +191,31 @@ public class PasswordVaultServer {
         ClientContext clientContext = (ClientContext) key.attachment();
         ByteBuffer buffer = clientContext.getWriteBuffer();
 
-        if (buffer == null) {
-            key.interestOps(SelectionKey.OP_READ);
-            return;
+        try {
+            if (buffer == null) {
+                key.interestOps(SelectionKey.OP_READ);
+                return;
+            }
+
+            clientChannel.write(buffer);
+
+            if (!buffer.hasRemaining()) {
+                clientContext.setWriteBuffer(null);
+                key.interestOps(SelectionKey.OP_READ);
+            }
+        } catch (IOException e) {
+            Logger.log("Client write failed: " + e.getMessage());
+            closeClient(clientChannel, key);
         }
+    }
 
-        clientChannel.write(buffer);
+    private void closeClient(SocketChannel channel, SelectionKey key) {
+        key.cancel();
 
-        if (!buffer.hasRemaining()) {
-            clientContext.setWriteBuffer(null);
-            key.interestOps(SelectionKey.OP_READ);
+        try {
+            channel.close();
+        } catch (IOException e) {
+            Logger.logError("Error closing client channel", e);
         }
     }
 
