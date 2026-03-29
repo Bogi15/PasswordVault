@@ -116,7 +116,7 @@ enzoic.api_secret=your_api_secret
 
 Compromised password detection uses the [Enzoic Passwords API](https://www.enzoic.com/docs-password-security-api/).
 
-When a user runs `add-password`, the server checks the password against known breach databases using SHA1, MD5, and SHA256 hashes before storing it.
+When a user runs `add-password`, the server checks the password against known breach databases using Enzoic API with a POST request with the first 10 chars of the SHA256 of the password.
 
 **Example API request:**
 ```
